@@ -6,32 +6,32 @@ const walk = require('walk')
 const chalk = require('chalk')
 
 const optimist = require('optimist')
-                .usage('Usage: $0 <projectroot> --decamel --tokens [array] --exlude [array] --drop [array]')
+    .usage('Usage: $0 <projectroot> --decamel --tokens [array] --exlude [array] --drop [array]')
 
-                .boolean('decamel')
-                .default('decamel', true)
-                .describe('decamel', 'Boolean - whether or not to break apart words by decamelizing them')
+    .boolean('decamel')
+    .default('decamel', true)
+    .describe('decamel', 'Boolean - whether or not to break apart words by decamelizing them')
 
-                .boolean('split')
-                .default('split', true)
-                .describe('split', 'Boolean - whether or not to break apart words by spliting them on whitespace')
+    .boolean('split')
+    .default('split', true)
+    .describe('split', 'Boolean - whether or not to break apart words by spliting them on whitespace')
 
-                .describe('split-regex', 'RegExp - regex to split words on, good for dropping non-ascii characters')
+    .describe('split-regex', 'RegExp - regex to split words on, good for dropping non-ascii characters')
 
-                .default('tokens', 'Identifier')
-                .string('tokens')
-                .describe('tokens', 'Array - token types to include in processing, supports all esprima token types, ones I know about: Keyword, Identifier, Punctuator, String, Numeric, Boolean, Template, Null, RegularExpression')
+    .default('tokens', 'Identifier')
+    .string('tokens')
+    .describe('tokens', 'Array - token types to include in processing, supports all esprima token types, ones I know about: Keyword, Identifier, Punctuator, String, Numeric, Boolean, Template, Null, RegularExpression')
 
-                .default('exclude-folders', 'node_modules,coverage,tests')
-                .describe('exclude-folders', 'Array - folder names to exlude')
+    .default('exclude-folders', 'node_modules,coverage,tests')
+    .describe('exclude-folders', 'Array - folder names to exlude')
 
-                .describe('exclude-files', 'Array - file names to exclude')
+    .describe('exclude-files', 'Array - file names to exclude')
 
-                .describe('drop', 'Array - words to drop')
+    .describe('drop', 'Array - words to drop')
 
-                .boolean('save-analysis')
-                .default('save-analysis', false)
-                .describe('save-analysis', 'Boolean - Whether or not to save the analysis into output.json')
+    .boolean('save-analysis')
+    .default('save-analysis', false)
+    .describe('save-analysis', 'Boolean - Whether or not to save the analysis into output.csv')
                 
 const argv = optimist.argv
 
@@ -106,7 +106,7 @@ new Promise((resolve, reject) => {
                 // split by regex
                 .map(word => splitRegex ? word.split(splitRegex) : word).flatMap()
                 // drop the words to not include
-                .filter((word) => _.isEmpty(dropWords) || !dropWords.includes(word))
+                .filter((word) => word != '' && (_.isEmpty(dropWords) || !dropWords.includes(word)))
                 // count
                 .countBy(word => word)
                 .value()
@@ -123,7 +123,11 @@ new Promise((resolve, reject) => {
         .map(([text, count]) => { return { text, count }})
         .value()
     if (saveAnalysis) {
-        fs.writeFileSync('./output.json', JSON.stringify(counts, null, 2))
+        let blah = ''
+        counts.forEach((row) => {
+            blah += `${row.text},${row.count}\n`
+        })
+        fs.writeFileSync('./output.csv', blah)
     }
     fs.writeFileSync('./data.js', 
 `function getData() {
