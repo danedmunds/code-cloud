@@ -4,12 +4,40 @@ const _ = require('lodash')
 const decamelize = require('decamelize')
 const walk = require('walk')
 
-const projectRoot = process.argv[2]
-const excludedFolders = ['node_modules', 'coverage', 'tests']
-const tokenTypes = [ 'Identifier' ]
-const dropWords = ['']
-const applyDecamelize = true
+const optimist = require('optimist')
+                .usage('Usage: $0 <projectroot> --decamel --tokens [array] --exlude [array] --drop [array]')
 
+                .boolean(['decamel'])
+                .default('decamel', true)
+                .describe('decamel', 'Boolean - whether or not to break apart words by decamelizing them')
+
+                .default('tokens', 'Identifier')
+                .describe('tokens', 'Array - token types to include in processing')
+
+                .default('exclude', 'node_modules,coverage,tests')
+                .describe('exclude', 'Array - file and folder names to exlude')
+                
+                .default('drop', '')
+                .describe('drop', 'Array - words to drop')
+                
+const argv = optimist.argv
+
+const projectRoot = argv._[0]
+const excludedFolders = argv.exclude.split(',')
+const tokenTypes = argv.tokens.split(',')
+const dropWords = argv.drop.split(',')
+const applyDecamelize = argv.decamel
+
+if (argv.help) {
+    optimist.showHelp()
+    return
+}
+
+if (!projectRoot) {
+    console.error('Missing project root')
+    optimist.showHelp()
+    return
+}
 console.log(`scanning ${projectRoot}`)
 
 new Promise((resolve, reject) => {
