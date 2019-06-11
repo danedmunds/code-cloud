@@ -16,8 +16,10 @@ const optimist = require('optimist')
                 .string('tokens')
                 .describe('tokens', 'Array - token types to include in processing, supports all esprima token types')
 
-                .default('exclude', 'node_modules,coverage,tests')
-                .describe('exclude', 'Array - file and folder names to exlude')
+                .default('exclude-folders', 'node_modules,coverage,tests')
+                .describe('exclude-folders', 'Array - folder names to exlude')
+
+                .describe('exclude-files', 'Array - file names to exclude')
 
                 .default('drop', ',')
                 .describe('drop', 'Array - words to drop')
@@ -25,7 +27,8 @@ const optimist = require('optimist')
 const argv = optimist.argv
 
 const projectRoot = argv._[0]
-const excludedFolders = argv.exclude ? argv.exclude.split(',') : []
+const excludedFolders = argv['exclude-folders'] ? argv['exclude-folders'].split(',') : []
+const excludedFiles = argv['exclude-files'] ? argv['exclude-files'].split(',') : []
 const tokenTypes = argv.tokens ? argv.tokens.split(',') : []
 const dropWords = argv.drop ? argv.drop.split(','): []
 const applyDecamelize = argv.decamel
@@ -47,10 +50,11 @@ if (!fs.existsSync(projectRoot)) {
 }
 
 console.log(`${chalk.yellow('Running with options:')}
-    ${chalk.yellow('decamel:')}    ${chalk.blue(JSON.stringify(applyDecamelize))}
-    ${chalk.yellow('tokens:')}     ${chalk.blue(JSON.stringify(tokenTypes))}
-    ${chalk.yellow('drop:')}       ${chalk.blue(JSON.stringify(dropWords))}
-    ${chalk.yellow('exclude:')}    ${chalk.blue(JSON.stringify(excludedFolders))}
+    ${chalk.cyan('decamel:')}           ${chalk.blue(JSON.stringify(applyDecamelize))}
+    ${chalk.cyan('tokens:')}            ${chalk.blue(JSON.stringify(tokenTypes))}
+    ${chalk.cyan('drop:')}              ${chalk.blue(JSON.stringify(dropWords))}
+    ${chalk.cyan('exclude-folders:')}   ${chalk.blue(JSON.stringify(excludedFolders))}
+    ${chalk.cyan('exclude-files:')}     ${chalk.blue(JSON.stringify(excludedFiles))}
 `)
 
 console.log(chalk.yellow(`scanning ${projectRoot}`))
@@ -60,7 +64,7 @@ new Promise((resolve, reject) => {
     const walker = walk.walk(projectRoot, { filters: excludedFolders})
     walker.on("file", (root, filestats, next) => {
         const name = filestats.name
-        if (name.endsWith('.js')) {
+        if (name.endsWith('.js') && !excludedFiles.includes(name)) {
             files.push(root + '/' + name)
         }
         next()
