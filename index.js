@@ -33,15 +33,20 @@ new Promise((resolve, reject) => {
         .map(file => {
             console.log('processing ' + file)
             const contents = fs.readFileSync(file, { encoding: 'UTF-8' })
-            return esprima.tokenize(contents)
+            return _.chain(esprima.tokenize(contents))
+                .filter(token => tokenTypes.includes(token.type))
+                .map(token => token.value)
+                .map(cameled => applyDecamelize ? decamelize(cameled, '_').split('_') : cameled)
+                .flatMap()
+                .filter((word) => !dropWords.includes(word))
+                .countBy(word => word)
+                .value()
         })
-        .flatMap()
-        .filter(token => tokenTypes.includes(token.type))
-        .map(token => token.value)
-        .map(cameled => applyDecamelize ? decamelize(cameled, '_').split('_') : cameled)
-        .flatMap()
-        .filter((word) => !dropWords.includes(word))
-        .countBy(word => word)
+        .transform((acc, value) => {
+            _.forEach(value, (count, text) => {
+                acc[text] = acc[text] ? acc[text] + count : count
+            })
+        }, {})
         .toPairs()
         .map(([text, count]) => { return { text, count }})
         .value()
