@@ -12,20 +12,21 @@ const optimist = require('optimist')
                 .describe('decamel', 'Boolean - whether or not to break apart words by decamelizing them')
 
                 .default('tokens', 'Identifier')
-                .describe('tokens', 'Array - token types to include in processing')
+                .string('tokens')
+                .describe('tokens', 'Array - token types to include in processing, supports all esprima token types')
 
                 .default('exclude', 'node_modules,coverage,tests')
                 .describe('exclude', 'Array - file and folder names to exlude')
-                
-                .default('drop', '')
+
+                .default('drop', ',')
                 .describe('drop', 'Array - words to drop')
                 
 const argv = optimist.argv
 
 const projectRoot = argv._[0]
-const excludedFolders = argv.exclude.split(',')
-const tokenTypes = argv.tokens.split(',')
-const dropWords = argv.drop.split(',')
+const excludedFolders = argv.exclude ? argv.exclude.split(',') : []
+const tokenTypes = argv.tokens ? argv.tokens.split(',') : []
+const dropWords = argv.drop ? argv.drop.split(','): []
 const applyDecamelize = argv.decamel
 
 if (argv.help) {
@@ -38,6 +39,13 @@ if (!projectRoot) {
     optimist.showHelp()
     return
 }
+
+console.log(`Running with options:
+    decamel:    ${JSON.stringify(applyDecamelize)}
+    tokens:     ${JSON.stringify(tokenTypes)}
+    drop:       ${JSON.stringify(dropWords)}
+    exclude:    ${JSON.stringify(excludedFolders)}
+`)
 console.log(`scanning ${projectRoot}`)
 
 new Promise((resolve, reject) => {
@@ -62,11 +70,11 @@ new Promise((resolve, reject) => {
             console.log('processing ' + file)
             const contents = fs.readFileSync(file, { encoding: 'UTF-8' })
             return _.chain(esprima.tokenize(contents))
-                .filter(token => tokenTypes.includes(token.type))
+                .filter(token => _.isEmpty(tokenTypes) || tokenTypes.includes(token.type))
                 .map(token => token.value)
                 .map(cameled => applyDecamelize ? decamelize(cameled, '_').split('_') : cameled)
                 .flatMap()
-                .filter((word) => !dropWords.includes(word))
+                .filter((word) => _.isEmpty(dropWords) || !dropWords.includes(word))
                 .countBy(word => word)
                 .value()
         })
