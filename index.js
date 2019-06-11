@@ -28,6 +28,10 @@ const optimist = require('optimist')
                 .describe('exclude-files', 'Array - file names to exclude')
 
                 .describe('drop', 'Array - words to drop')
+
+                .boolean('save-analysis')
+                .default('save-analysis', false)
+                .describe('save-analysis', 'Boolean - Whether or not to save the analysis into output.json')
                 
 const argv = optimist.argv
 
@@ -39,6 +43,7 @@ const dropWords = argv.drop ? argv.drop.split(','): []
 const applyDecamelize = argv.decamel
 const splitStrings = argv.split
 const splitRegex = argv['split-regex'] ? new RegExp(argv['split-regex']) : null
+const saveAnalysis = argv['save-analysis']
 
 if (argv.help) {
     optimist.showHelp()
@@ -62,7 +67,8 @@ console.log(`${chalk.yellow('Running with options:')}
     ${chalk.cyan('drop:')}              ${chalk.blue(JSON.stringify(dropWords))}
     ${chalk.cyan('exclude-folders:')}   ${chalk.blue(JSON.stringify(excludedFolders))}
     ${chalk.cyan('exclude-files:')}     ${chalk.blue(JSON.stringify(excludedFiles))}
-    ${chalk.cyan('split-regex:')}       ${chalk.blue(_.toString(splitRegex))}
+    ${chalk.cyan('split-regex:')}       ${chalk.blue(splitRegex ? splitRegex.toString() : null)}
+    ${chalk.cyan('save-analysis:')}     ${chalk.blue(JSON.stringify(saveAnalysis))}
 `)
 
 console.log(chalk.yellow(`scanning ${projectRoot}`))
@@ -116,6 +122,9 @@ new Promise((resolve, reject) => {
         // render into objects
         .map(([text, count]) => { return { text, count }})
         .value()
+    if (saveAnalysis) {
+        fs.writeFileSync('./output.json', JSON.stringify(counts, null, 2))
+    }
     fs.writeFileSync('./data.js', 
 `function getData() {
     return ${JSON.stringify(counts, null, 2)}
