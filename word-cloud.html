@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    <meta charset="utf-8">
+    <title>Code Cloud</title>
+	
+		<script src="https://cdn.zingchart.com/zingchart.min.js"></script>
+    <style>
+      html, body {
+        height:100%;
+        width:100%;
+        margin:0;
+        padding:0;
+      }
+      #myChart {
+        height:100%;
+        width:100%;
+        min-height:150px;
+      }
+      .zc-ref {
+        display:none;
+      }
+      zing-grid[loading]{height:800px;}
+    </style>
+    <script src="data.js"></script>
+  </head>
+	<body>
+    <div id="myChart"><a class="zc-ref" href="https://www.zingchart.com">Powered by ZingChart</a></div>
+    <script>
+      ZC.LICENSE=["b55b025e438fa8a98e32482b5f768ff5"];
+      var myConfig = {
+        graphset: [
+          {
+            type: "wordcloud",
+            options: {
+              style: {
+                tooltip: { visible: true, text: '%text: %hits' }
+              },
+              words: getData()
+            }
+          }
+        ]
+      };
+
+      zingchart.render({ id: 'myChart', data: myConfig, height: '100%', width: '100%' });
+    </script>
+</body>
+</html>
