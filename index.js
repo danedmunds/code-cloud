@@ -8,20 +8,25 @@ const chalk = require('chalk')
 const optimist = require('optimist')
                 .usage('Usage: $0 <projectroot> --decamel --tokens [array] --exlude [array] --drop [array]')
 
-                .boolean(['decamel'])
+                .boolean('decamel')
                 .default('decamel', true)
                 .describe('decamel', 'Boolean - whether or not to break apart words by decamelizing them')
 
+                .boolean('split')
+                .default('split', true)
+                .describe('split', 'Boolean - whether or not to break apart words by spliting them on whitespace')
+
+                .describe('split-regex', 'RegExp - regex to split words on, good for dropping non-ascii characters')
+
                 .default('tokens', 'Identifier')
                 .string('tokens')
-                .describe('tokens', 'Array - token types to include in processing, supports all esprima token types')
+                .describe('tokens', 'Array - token types to include in processing, supports all esprima token types, ones I know about: Keyword, Identifier, Punctuator, String, Numeric, Boolean, Template, Null, RegularExpression')
 
                 .default('exclude-folders', 'node_modules,coverage,tests')
                 .describe('exclude-folders', 'Array - folder names to exlude')
 
                 .describe('exclude-files', 'Array - file names to exclude')
 
-                .default('drop', ',')
                 .describe('drop', 'Array - words to drop')
                 
 const argv = optimist.argv
@@ -32,6 +37,8 @@ const excludedFiles = argv['exclude-files'] ? argv['exclude-files'].split(',') :
 const tokenTypes = argv.tokens ? argv.tokens.split(',') : []
 const dropWords = argv.drop ? argv.drop.split(','): []
 const applyDecamelize = argv.decamel
+const splitStrings = argv.split
+const splitRegex = argv['split-regex'] ? new RegExp(argv['split-regex']) : null
 
 if (argv.help) {
     optimist.showHelp()
@@ -55,6 +62,7 @@ console.log(`${chalk.yellow('Running with options:')}
     ${chalk.cyan('drop:')}              ${chalk.blue(JSON.stringify(dropWords))}
     ${chalk.cyan('exclude-folders:')}   ${chalk.blue(JSON.stringify(excludedFolders))}
     ${chalk.cyan('exclude-files:')}     ${chalk.blue(JSON.stringify(excludedFiles))}
+    ${chalk.cyan('split-regex:')}       ${chalk.blue(_.toString(splitRegex))}
 `)
 
 console.log(chalk.yellow(`scanning ${projectRoot}`))
@@ -81,20 +89,31 @@ new Promise((resolve, reject) => {
             console.log(chalk.yellow('processing ') + chalk.green(file))
             const contents = fs.readFileSync(file, { encoding: 'UTF-8' })
             return _.chain(esprima.tokenize(contents))
-                .filter(token => _.isEmpty(tokenTypes) || tokenTypes.includes(token.type))
+                // filter requested token types
+                .filter(token =>  _.isEmpty(tokenTypes) || tokenTypes.includes(token.type))
+                // get the token value
                 .map(token => token.value)
-                .map(cameled => applyDecamelize ? decamelize(cameled, '_').split('_') : cameled)
-                .flatMap()
+                // split camelcase
+                .map(cameled => applyDecamelize ? decamelize(cameled, '_').split('_') : cameled).flatMap()
+                // split by whitespace
+                .map(word => splitStrings ? word.split(/\s/) : word).flatMap()
+                // split by regex
+                .map(word => splitRegex ? word.split(splitRegex) : word).flatMap()
+                // drop the words to not include
                 .filter((word) => _.isEmpty(dropWords) || !dropWords.includes(word))
+                // count
                 .countBy(word => word)
                 .value()
         })
+        // combine the analyses
         .transform((acc, value) => {
             _.forEach(value, (count, text) => {
                 acc[text] = acc[text] ? acc[text] + count : count
             })
         }, {})
+        // split into key-value pairs
         .toPairs()
+        // render into objects
         .map(([text, count]) => { return { text, count }})
         .value()
     fs.writeFileSync('./data.js', 
