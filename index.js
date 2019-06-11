@@ -3,6 +3,7 @@ const esprima = require('esprima')
 const _ = require('lodash')
 const decamelize = require('decamelize')
 const walk = require('walk')
+const chalk = require('chalk')
 
 const optimist = require('optimist')
                 .usage('Usage: $0 <projectroot> --decamel --tokens [array] --exlude [array] --drop [array]')
@@ -35,18 +36,24 @@ if (argv.help) {
 }
 
 if (!projectRoot) {
-    console.error('Missing project root')
+    console.error(chalk.red('Missing project root'))
     optimist.showHelp()
     return
 }
 
-console.log(`Running with options:
-    decamel:    ${JSON.stringify(applyDecamelize)}
-    tokens:     ${JSON.stringify(tokenTypes)}
-    drop:       ${JSON.stringify(dropWords)}
-    exclude:    ${JSON.stringify(excludedFolders)}
+if (!fs.existsSync(projectRoot)) {
+    console.error(chalk.red(`${projectRoot} does not exist`))
+    return
+}
+
+console.log(`${chalk.yellow('Running with options:')}
+    ${chalk.yellow('decamel:')}    ${chalk.blue(JSON.stringify(applyDecamelize))}
+    ${chalk.yellow('tokens:')}     ${chalk.blue(JSON.stringify(tokenTypes))}
+    ${chalk.yellow('drop:')}       ${chalk.blue(JSON.stringify(dropWords))}
+    ${chalk.yellow('exclude:')}    ${chalk.blue(JSON.stringify(excludedFolders))}
 `)
-console.log(`scanning ${projectRoot}`)
+
+console.log(chalk.yellow(`scanning ${projectRoot}`))
 
 new Promise((resolve, reject) => {
     const files = []
@@ -67,7 +74,7 @@ new Promise((resolve, reject) => {
 }).then((files) => {
     let counts = _.chain(files)
         .map(file => {
-            console.log('processing ' + file)
+            console.log(chalk.yellow('processing ') + chalk.green(file))
             const contents = fs.readFileSync(file, { encoding: 'UTF-8' })
             return _.chain(esprima.tokenize(contents))
                 .filter(token => _.isEmpty(tokenTypes) || tokenTypes.includes(token.type))
