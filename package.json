@@ -1,0 +1,17 @@
+{
+  "name": "code-cloud",
+  "version": "1.0.0",
+  "description": "Generate a word cloud from a node project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "decamelize": "^3.2.0",
+    "esprima": "^4.0.1",
+    "lodash": "^4.17.11",
+    "walk": "^2.3.14"
+  }
+}
