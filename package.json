@@ -12,7 +12,7 @@
     "chalk": "^2.4.2",
     "decamelize": "^3.2.0",
     "esprima": "^4.0.1",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "optimist": "^0.6.1",
     "walk": "^2.3.14"
   }
